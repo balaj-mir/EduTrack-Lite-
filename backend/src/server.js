@@ -38,6 +38,41 @@ async function connectDatabase() {
   }
 }
 
+async function seedInitialData() {
+  try {
+    const User = require('./models/User');
+    const Course = require('./models/Course');
+    const Quiz = require('./models/Quiz');
+    const Enrollment = require('./models/Enrollment');
+    const Submission = require('./models/Submission');
+
+    const count = await User.countDocuments();
+    if (count > 0) return;
+
+    console.log('🌱 Seeding initial demo data into MongoDB...');
+    const prof = await User.create({ name: 'Prof. Alan Turing', email: 'prof@university.edu', password: 'password123', role: 'instructor' });
+    const alice = await User.create({ name: 'Alice Smith', email: 'alice@student.edu', password: 'password123', role: 'student' });
+    const bob = await User.create({ name: 'Bob Jones', email: 'bob@student.edu', password: 'password123', role: 'student' });
+
+    const course = await Course.create({ title: 'CS101: Artificial Intelligence & Risk Classifiers', description: 'Comprehensive introduction to machine learning models and OULAD student risk analytics.', instructor: prof._id });
+
+    const quiz1 = await Quiz.create({ course: course._id, title: 'Module 1: Linear & Logistic Regression', maxScore: 100 });
+    const quiz2 = await Quiz.create({ course: course._id, title: 'Module 2: Feature Engineering & ROC Curves', maxScore: 50 });
+
+    await Enrollment.create({ student: alice._id, course: course._id });
+    await Enrollment.create({ student: bob._id, course: course._id });
+
+    await Submission.create({ student: alice._id, quiz: quiz1._id, course: course._id, score: 95 });
+    await Submission.create({ student: alice._id, quiz: quiz2._id, course: course._id, score: 48 });
+
+    await Submission.create({ student: bob._id, quiz: quiz1._id, course: course._id, score: 35 });
+
+    console.log('✅ Demo seeding completed! Ready for instant login.');
+  } catch (err) {
+    console.error('⚠️ Error seeding data:', err.message);
+  }
+}
+
 async function startServer() {
   const connected = await connectDatabase();
 
@@ -54,6 +89,8 @@ async function startServer() {
       process.exit(1);
     }
   }
+
+  await seedInitialData();
 
   app.listen(PORT, () => {
     console.log(`🚀 EduTrack Lite Backend running on http://localhost:${PORT}`);
